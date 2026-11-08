@@ -26,7 +26,7 @@ YOUTUBE_API_KEY 請貼入新的 YouTube Data API Key。
 
 ## 3. 設定前端 Proxy URL
 
-把部署後的 Worker URL 填入根目錄 firebase-config.js：
+把部署後的 Worker URL 填入 `config/firebase-config.js`：
 
 ```js
 window.WATCHTOGETHER_CONFIG = {
