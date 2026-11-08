@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 
-const DEFAULT_SITE_URL = "https://a0983439343-dot.github.io/WatchTogether";
+const DEFAULT_SITE_URL = "https://pixelproto-x.github.io/WatchTogether";
 const DEFAULT_BUG_SERVICE_URL = "https://watchtogether-youtube-proxy-2026.onrender.com";
 
 function clean(value, max = 1800) {
@@ -225,6 +225,7 @@ journey("WatchTogether 24/7 autonomous bug monitor", async ({ page, params, requ
     DEFAULT_SITE_URL
   )
     .trim()
+    .replace(/^https:\/\/a0983439343-dot\.github\.io(?=\/|$)/i, "https://pixelproto-x.github.io")
     .replace(/\/+$/, "");
 
   const bugServiceUrl = String(
