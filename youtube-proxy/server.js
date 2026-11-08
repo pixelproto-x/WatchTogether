@@ -58,13 +58,19 @@ let activeSearches = 0;
 let activeStreams = 0;
 
 function getClientIp(req) {
-  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
-  return forwarded || String(req.socket?.remoteAddress || "unknown");
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",").map(value => value.trim()).filter(Boolean);
+  // The reverse proxy appends the address it observed. Never trust the left-most
+  // value: clients can supply their own X-Forwarded-For header.
+  return forwarded.at(-1) || String(req.socket?.remoteAddress || "unknown");
 }
 
 function allowRate(ip, key, limit) {
   const now = Date.now();
   const bucketKey = key + ":" + ip;
+  if (!rateBuckets.has(bucketKey) && rateBuckets.size >= 10000) {
+    cleanupRateBuckets();
+    if (rateBuckets.size >= 10000) return false;
+  }
   const bucket = rateBuckets.get(bucketKey);
   if (!bucket || now - bucket.startedAt >= RATE_WINDOW_MS) {
     rateBuckets.set(bucketKey, {startedAt: now, count: 1});
@@ -256,8 +262,8 @@ function extractGeminiText(value) {
 
 function cleanAiInput(value, max = 2400) {
   return String(value == null ? "" : value)
-    .replace(/[\\u0000-\\u001f\\u007f]/g, " ")
-    .replace(/\\s+/g, " ")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
     .trim()
     .slice(0, max);
 }
@@ -621,18 +627,19 @@ async function analyzeBugWithGemini(input) {
 
 function getBearerToken(req) {
   const value = String(req.headers.authorization || "").trim();
-  if (!/^Bearer\\s+/i.test(value)) return "";
-  return value.replace(/^Bearer\\s+/i, "").trim();
+  if (!/^Bearer\s+/i.test(value)) return "";
+  return value.replace(/^Bearer\s+/i, "").trim();
 }
 
 function getMaintenanceHashConfig() {
   const raw = MAINTENANCE_PASSWORD_HASH;
-  const match = raw.match(/^scrypt\\$(\\d+)\\$(\\d+)\\$(\\d+)\\$([0-9a-fA-F]+)\\$([0-9a-fA-F]+)$/);
+  const match = raw.match(/^scrypt\$(\d+)\$(\d+)\$(\d+)\$([0-9a-fA-F]+)\$([0-9a-fA-F]+)$/);
   if (!match) return null;
   const N = Number(match[1]);
   const r = Number(match[2]);
   const p = Number(match[3]);
   const salt = Buffer.from(match[4], "hex");
+  if (match[4].length % 2 !== 0 || match[5].length % 2 !== 0) return null;
   const digest = Buffer.from(match[5], "hex");
   if (!Number.isSafeInteger(N) || !Number.isSafeInteger(r) || !Number.isSafeInteger(p) || !salt.length || !digest.length) {
     return null;
@@ -671,6 +678,12 @@ function getMaintenanceFailureState(key) {
 }
 
 function registerMaintenanceFailure(key) {
+  if (!maintenanceFailures.has(key) && maintenanceFailures.size >= 5000) {
+    for (const [entryKey, entry] of maintenanceFailures) {
+      if (Date.now() - Number(entry?.lastFailureAt || 0) > MAINTENANCE_LOCKOUT_MS * 2) maintenanceFailures.delete(entryKey);
+    }
+    if (maintenanceFailures.size >= 5000) maintenanceFailures.delete(maintenanceFailures.keys().next().value);
+  }
   const current = getMaintenanceFailureState(key) || {attempts: 0, lastFailureAt: 0, lockedUntil: 0};
   current.attempts += 1;
   current.lastFailureAt = Date.now();
