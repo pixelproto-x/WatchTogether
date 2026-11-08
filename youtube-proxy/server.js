@@ -41,7 +41,7 @@ const YT_POT_PROVIDER_URL =
   process.env.YT_POT_PROVIDER_URL ||
   "http://127.0.0.1:4416";
 const VERIFY_SITE_URL =
-  String(process.env.WATCHTOGETHER_SITE_URL || "https://a0983439343-dot.github.io/WatchTogether")
+  String(process.env.WATCHTOGETHER_SITE_URL || "https://pixelproto-x.github.io/WatchTogether")
     .trim()
     .replace(/\/+$/, "");
 const FIREBASE_API_KEY = String(process.env.FIREBASE_API_KEY || "").trim();
@@ -191,7 +191,8 @@ function getAiModelFallbacks(phase = "") {
 function aiAllowedOrigin(req) {
   const origin = String(req.headers.origin || "").trim();
   if (!origin) return true;
-  return origin === "https://a0983439343-dot.github.io" ||
+  return origin === "https://pixelproto-x.github.io" ||
+    origin === "https://a0983439343-dot.github.io" ||
     origin === "http://localhost:3000" ||
     origin === "http://127.0.0.1:3000";
 }
