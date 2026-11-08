@@ -640,6 +640,17 @@ function isRateLimited(
   const now =
     Date.now();
 
+  // Bound isolate-local maps so a stream of unique authenticated identities
+  // cannot grow memory without limit.
+  if (!bucketMap.has(key) && bucketMap.size >= 10000) {
+    for (const [entryKey, entry] of bucketMap) {
+      if (!entry || now - Number(entry.start || 0) >= RATE_WINDOW_MS * 2) {
+        bucketMap.delete(entryKey);
+      }
+    }
+    if (bucketMap.size >= 10000) return true;
+  }
+
   const record =
     bucketMap.get(
       key
