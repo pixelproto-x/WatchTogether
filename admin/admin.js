@@ -95,6 +95,12 @@
       return "master";
     }
 
+    // A block must override every non-master role, including custom roles.
+    // Check it before resolving roleByUid so a blocked custom-role account
+    // cannot bypass the admin-panel access gate.
+    const blockSnapshot = await db.ref("admin/blocksByUid/" + user.uid).once("value");
+    if (isActiveBlock(blockSnapshot.val())) return null;
+
     try {
       const assignedSnapshot = await db.ref("admin/access/roleByUid/" + user.uid).once("value");
       const assignedRole = String(assignedSnapshot.val() || "").trim();
@@ -120,17 +126,7 @@
       console.warn("custom admin role resolve failed:", error);
     }
 
-    const [snapshot, blockSnapshot] = await Promise.all([
-      db.ref("admin/whitelistByUid/" + user.uid).once("value"),
-      db.ref("admin/blocksByUid/" + user.uid).once("value")
-    ]);
-    const block = blockSnapshot.val();
-    if (block && (
-      block.permanent === true ||
-      Number(block.blockedUntil || 0) > Date.now()
-    )) {
-      return null;
-    }
+    const snapshot = await db.ref("admin/whitelistByUid/" + user.uid).once("value");
     const item = snapshot.val();
     if (!item || item.uid !== user.uid || item.enabled !== true) return null;
     currentRoleSource = "whitelist";
