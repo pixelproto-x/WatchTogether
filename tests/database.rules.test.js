@@ -182,13 +182,20 @@ serialTest("reports: manually submitted reports can store verification but canno
 
   await assertFails(ref.child("status").set("resolved"));
 
-  await assertSucceeds(ref.child("verification").update({
+  await assertFails(ref.child("verification").update({
     state: "approved",
     approved: true,
     stableChecks: 2,
     checkedAt: Date.now()
   }));
+  await assertFails(ref.child("status").set("ai_completed"));
 
+  await assertSucceeds(db(ADMIN_UID, adminToken).ref("reports/manual-verify/verification").update({
+    state: "approved",
+    approved: true,
+    stableChecks: 2,
+    checkedAt: Date.now()
+  }));
   await assertSucceeds(ref.child("status").set("resolved"));
 });
 
@@ -235,7 +242,15 @@ serialTest("reports: automatic bug records can be reopened and updated only by t
     status: "resolved"
   }));
 
-  await assertSucceeds(ref.child("verification").set({
+  await assertFails(ref.child("verification").set({
+    approved: true,
+    state: "approved",
+    checkedAt: Date.now(),
+    stableChecks: 2
+  }));
+  await assertFails(ref.update({status: "ai_completed"}));
+
+  await assertSucceeds(db(ADMIN_UID, adminToken).ref("reports/auto-report/verification").set({
     approved: true,
     state: "approved",
     checkedAt: Date.now(),

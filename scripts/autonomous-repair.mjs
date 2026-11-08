@@ -765,30 +765,16 @@ async function restoreChanged(changed) {
 }
 
 async function commitAndPush(changedFiles, reportId) {
-  const name = "WatchTogether Autonomous Repair";
-  const email = "watchtogether-autorepair@users.noreply.github.com";
-  await git(["config", "user.name", name]);
-  await git(["config", "user.email", email]);
-  await execFileAsync("git", ["add", "--", ...changedFiles], {cwd: ROOT});
-  await git(["diff", "--cached", "--check"]);
-  const staged = await git(["diff", "--cached", "--name-only"]);
-  if (!staged) throw new Error("沒有可提交的修復變更");
-  const commitMessage = "fix: autonomous repair [report:" + String(reportId || "unknown").slice(0,128) + "]";
-  const commitSha = await git(["commit", "-m", commitMessage]);
-
-  try {
-    await execFileAsync("git", ["pull", "--rebase", "origin", "main"], {
-      cwd: ROOT,
-      maxBuffer: 2_000_000
-    });
-  } catch (error) {
-    try { await execFileAsync("git", ["rebase", "--abort"], {cwd: ROOT}); } catch (_) {}
-    throw new Error("GitHub main 分支在修復提交期間發生衝突：" + clean(error?.stderr || error?.message || error, 1200));
-  }
-
-  await execFileAsync("git", ["push", "origin", "HEAD:main"], {cwd: ROOT, maxBuffer: 2_000_000});
-  const sha = await git(["rev-parse", "HEAD"]);
-  return {commitSha: String(commitSha || "").slice(-80), sha, files: staged.split(/\r?\n/).filter(Boolean)};
+  // AI-generated patches may contain prompt-injected or otherwise unsafe code.
+  // Never let an external bug report trigger a direct write to the production
+  // branch. Keep the candidate files in the workflow workspace for review only.
+  const error = new Error(
+    "自動修補已停止直接推送 main：AI 產生的修改必須先經人工審核並透過 Pull Request 合併。"
+  );
+  error.code = "manual_review_required";
+  error.reportId = String(reportId || "unknown").slice(0, 128);
+  error.changedFiles = Array.isArray(changedFiles) ? changedFiles.slice(0, 20) : [];
+  throw error;
 }
 
 async function publicFileHash(file) {
@@ -940,15 +926,10 @@ async function stableRecheck(report, category, changed, commitSha) {
   };
 }
 
-async function revertCommit(sha) {
-  try {
-    await git(["revert", "--no-edit", sha]);
-    await execFileAsync("git", ["push", "origin", "HEAD:main"], {cwd: ROOT, maxBuffer: 2_000_000});
-    return true;
-  } catch (error) {
-    console.error("自動回滾失敗", error?.stderr || error?.message || error);
-    return false;
-  }
+async function revertCommit() {
+  // Direct production-branch commits are disabled; there is nothing safe to
+  // revert automatically. Production changes must go through reviewed PRs.
+  return false;
 }
 
 async function repairOne(database, reportId, report, batchId, batchPosition, batchTotal, fullAutoMaintenance = false) {
