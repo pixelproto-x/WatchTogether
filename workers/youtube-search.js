@@ -6,7 +6,7 @@
  * Required Worker secrets / variables:
  *   YOUTUBE_API_KEY=<new YouTube Data API key>
  *   FIREBASE_PROJECT_ID=watchtogether-3f4f9
- *   ALLOWED_ORIGIN=https://a0983439343-dot.github.io
+ *   ALLOWED_ORIGIN=https://pixelproto-x.github.io
  *
  * The browser NEVER receives the YouTube API key.
  *
@@ -16,7 +16,7 @@
  */
 
 const DEFAULT_ALLOWED_ORIGIN =
-  "https://a0983439343-dot.github.io";
+  "https://pixelproto-x.github.io";
 
 const DEFAULT_FIREBASE_PROJECT_ID =
   "watchtogether-3f4f9";
