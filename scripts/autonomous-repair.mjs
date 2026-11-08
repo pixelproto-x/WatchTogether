@@ -9,7 +9,10 @@ import {getAuth} from "firebase-admin/auth";
 
 const execFileAsync = promisify(execFile);
 const ROOT = process.env.GITHUB_WORKSPACE || process.cwd();
-const SITE_URL = String(process.env.WATCHTOGETHER_SITE_URL || "https://a0983439343-dot.github.io/WatchTogether").trim().replace(/\/+$/, "");
+const SITE_URL = String(process.env.WATCHTOGETHER_SITE_URL || "https://pixelproto-x.github.io/WatchTogether")
+  .trim()
+  .replace(/^https:\/\/a0983439343-dot\.github\.io(?=\/|$)/i, "https://pixelproto-x.github.io")
+  .replace(/\/+$/, "");
 const BUG_SERVICE_URL = String(process.env.WATCHTOGETHER_BUG_SERVICE_URL || "https://watchtogether-youtube-proxy-2026.onrender.com").trim().replace(/\/+$/, "");
 const FIREBASE_DATABASE_URL = String(process.env.FIREBASE_DATABASE_URL || "https://watchtogether-3f4f9-default-rtdb.asia-southeast1.firebasedatabase.app").trim();
 const REPOSITORY = String(process.env.GITHUB_REPOSITORY || "").trim();
