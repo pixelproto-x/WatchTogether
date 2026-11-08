@@ -43,6 +43,8 @@ const YT_POT_PROVIDER_URL =
 const VERIFY_SITE_URL =
   String(process.env.WATCHTOGETHER_SITE_URL || "https://pixelproto-x.github.io/WatchTogether")
     .trim()
+    // Normalize a legacy Render environment variable after the GitHub owner rename.
+    .replace(/^https:\/\/a0983439343-dot\.github\.io(?=\/|$)/i, "https://pixelproto-x.github.io")
     .replace(/\/+$/, "");
 const FIREBASE_API_KEY = String(process.env.FIREBASE_API_KEY || "").trim();
 const FIREBASE_DATABASE_URL = String(
