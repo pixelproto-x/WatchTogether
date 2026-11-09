@@ -199,6 +199,31 @@ serialTest("reports: manually submitted reports can store verification but canno
   await assertSucceeds(ref.child("status").set("resolved"));
 });
 
+serialTest("reports: users cannot create a report as approved or already resolved", async () => {
+  const base = {
+    uid: USER_UID,
+    category: "other",
+    details: "new report",
+    createdAt: Date.now()
+  };
+
+  await assertFails(db(USER_UID, userToken).ref("reports/self-approved-create").set({
+    ...base,
+    status: "open",
+    verification: {
+      approved: true,
+      state: "approved",
+      checkedAt: Date.now(),
+      stableChecks: 2
+    }
+  }));
+
+  await assertFails(db(USER_UID, userToken).ref("reports/self-resolved-create").set({
+    ...base,
+    status: "resolved"
+  }));
+});
+
 serialTest("reports: authenticated user can create only their own report", async () => {
   const ref = db(USER_UID, userToken).ref("reports/new-report");
 
